@@ -50,10 +50,19 @@ def register_all_providers() -> None:
     from .morgan import MorganFingerprintProvider
     from .transformer_embed import TransformerEmbedProvider
     from .gnn_embed import GNNEmbedProvider
+    from .maccs import MACCSKeysProvider
+    from .atompair import AtomPairFPProvider, TopologicalTorsionFPProvider
+    from .polymer_fp import PolymerFingerprintProvider
+    from .unimol import UniMolProvider
     
     # Register instances
     ProviderRegistry.register(RDKit2DProvider())
     ProviderRegistry.register(MorganFingerprintProvider())
+    ProviderRegistry.register(MACCSKeysProvider())
+    ProviderRegistry.register(AtomPairFPProvider())
+    ProviderRegistry.register(TopologicalTorsionFPProvider())
+    ProviderRegistry.register(PolymerFingerprintProvider())
     ProviderRegistry.register(TransformerEmbedProvider())
     ProviderRegistry.register(GNNEmbedProvider())
+    ProviderRegistry.register(UniMolProvider())
 
