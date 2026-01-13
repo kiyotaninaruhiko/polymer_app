@@ -10,7 +10,7 @@ import numpy as np
 
 try:
     from rdkit import Chem
-    from rdkit.Chem.AtomPairs import Pairs, Torsions
+    from rdkit.Chem import rdMolDescriptors
     from rdkit import DataStructs
     RDKIT_AVAILABLE = True
 except ImportError:
@@ -130,7 +130,7 @@ class AtomPairFPProvider(DescriptorProvider):
             
             if mol is not None:
                 try:
-                    fp = Pairs.GetHashedAtomPairFingerprintAsBitVect(
+                    fp = rdMolDescriptors.GetHashedAtomPairFingerprintAsBitVect(
                         mol, 
                         nBits=n_bits,
                         minLength=min_length,
@@ -299,7 +299,7 @@ class TopologicalTorsionFPProvider(DescriptorProvider):
             
             if mol is not None:
                 try:
-                    fp = Torsions.GetHashedTopologicalTorsionFingerprintAsBitVect(
+                    fp = rdMolDescriptors.GetHashedTopologicalTorsionFingerprintAsBitVect(
                         mol, 
                         nBits=n_bits,
                         targetSize=target_size
