@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+
+# Virtual environments
+venv/
+venv312/
+.venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+README.md
+docs/
+
+# Tests (optional - include if you want to run tests in container)
+# tests/
+
+# Large model files (download in container)
+models/
+*.bin
+*.pt
+*.pth
+
+# Local cache
+.poly_pred_cache/

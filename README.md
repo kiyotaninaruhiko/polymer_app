@@ -42,6 +42,27 @@ streamlit run app.py
 
 ブラウザで http://localhost:8501 にアクセスしてください。
 
+### Docker を使用する場合（推奨）
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/kiyotaninaruhiko/polymer_app.git
+cd polymer_app
+
+# Docker Composeで起動
+docker compose up -d
+
+# ログを確認
+docker compose logs -f
+```
+
+ブラウザで http://localhost:8501 にアクセスしてください。
+
+```bash
+# 停止
+docker compose down
+```
+
 ## 使い方
 
 ### 1. Input SMILES

@@ -1,0 +1,26 @@
+services:
+  polymer-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: polymer-descriptor-app
+    ports:
+      - "8501:8501"
+    volumes:
+      # Persist cache
+      - polymer_cache:/root/.poly_pred_cache
+      # Optional: mount local models directory
+      # - ./models:/app/models
+    environment:
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8501/_stcore/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  polymer_cache:
