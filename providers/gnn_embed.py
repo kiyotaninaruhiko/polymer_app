@@ -78,7 +78,7 @@ def get_bond_features(bond) -> list:
     return features
 
 
-def smiles_to_graph(smiles: str) -> Optional[Data]:
+def smiles_to_graph(smiles: str) -> Optional["Data"]:
     """Convert SMILES to PyTorch Geometric Data object"""
     if not RDKIT_AVAILABLE or not TORCH_GEOMETRIC_AVAILABLE:
         return None
