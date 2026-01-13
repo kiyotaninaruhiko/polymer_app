@@ -167,7 +167,12 @@ class UniMolProvider(DescriptorProvider):
         try:
             # Get embeddings for all SMILES
             reprs = model.get_repr(smiles_list)
-            embeddings = reprs['cls_repr']  # Use CLS token representation
+            
+            # Handle different return types (dict with 'cls_repr' or direct list/array)
+            if isinstance(reprs, dict) and 'cls_repr' in reprs:
+                embeddings = reprs['cls_repr']
+            else:
+                embeddings = reprs
             
             for i, record in enumerate(records):
                 meta_rows.append({
