@@ -80,22 +80,36 @@ docker compose down
 - 結果をテーブルで確認
 - CSV/Parquet/JSONでダウンロード
 
-## 対応モデル
+## 対応モデル一覧（全10種類）
 
-### RDKit系
-| モデル | 説明 |
-|--------|------|
-| RDKit 2D (basic) | 16種類の基本記述子 |
-| RDKit 2D (full) | 全RDKit記述子 |
-| Morgan FP | ECFP fingerprint |
+### 数値記述子（Numeric Descriptors）
+| モデル | Provider名 | 説明 | ポリマー対応 |
+|--------|-----------|------|:----------:|
+| RDKit 2D Descriptors | `rdkit2d` | 分子量、TPSA、LogP等 16〜200種類 | ❌ |
 
-### Transformer系
-| モデル | HuggingFace ID |
-|--------|---------------|
-| ChemBERTa-zinc | seyonec/ChemBERTa-zinc-base-v1 |
-| ChemBERTa-pubchem | seyonec/PubChem10M_SMILES_BPE_450k |
-| MoLFormer | ibm/MoLFormer-XL-both-10pct |
-| PolyNC | hkqiu/PolyNC |
+### フィンガープリント（Fingerprints）
+| モデル | Provider名 | 説明 | ポリマー対応 |
+|--------|-----------|------|:----------:|
+| Morgan Fingerprint | `morgan_fp` | ECFP/Morgan指紋（radius, nBits設定可） | ❌ |
+| MACCS Keys | `maccs_keys` | 166-bit 構造キー | ❌ |
+| Atom Pair FP | `atompair_fp` | 原子ペア指紋 | ❌ |
+| Topological Torsion FP | `torsion_fp` | トポロジー捻れ指紋 | ❌ |
+| Polymer FP (PFP) | `polymer_fp` | ポリマー専用指紋（モノマー記述子 + Morgan） | ✅ |
+
+### エンベディング（Embeddings）
+| モデル | Provider名 | 説明 | ポリマー対応 |
+|--------|-----------|------|:----------:|
+| Transformer Embedding | `transformer_embed` | ChemBERTa, MoLFormer, PolyNC等 | ✅ |
+| GNN Embedding (GIN) | `gnn_embed` | Graph Isomorphism Network | ❌ |
+| Uni-Mol | `unimol` | 3D構造ベースエンベディング | ❌ |
+
+### Transformer プリセット
+| モデル名 | HuggingFace ID | 特徴 |
+|---------|---------------|------|
+| ChemBERTa-zinc | `seyonec/ChemBERTa-zinc-base-v1` | 一般的な低分子向け |
+| ChemBERTa-pubchem | `seyonec/PubChem10M_SMILES_BPE_450k` | 大規模データセット学習 |
+| MoLFormer | `ibm/MoLFormer-XL-both-10pct` | IBM開発、高精度 |
+| PolyNC | `hkqiu/PolyNC` | ポリマー専用、要PyTorch 2.6+ |
 
 ## プロジェクト構成
 
