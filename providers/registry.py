@@ -49,8 +49,11 @@ def register_all_providers() -> None:
     from .rdkit2d import RDKit2DProvider
     from .morgan import MorganFingerprintProvider
     from .transformer_embed import TransformerEmbedProvider
+    from .gnn_embed import GNNEmbedProvider
     
     # Register instances
     ProviderRegistry.register(RDKit2DProvider())
     ProviderRegistry.register(MorganFingerprintProvider())
     ProviderRegistry.register(TransformerEmbedProvider())
+    ProviderRegistry.register(GNNEmbedProvider())
+

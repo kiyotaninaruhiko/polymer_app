@@ -28,7 +28,8 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir 'torch>=2.6.0' --index-url https://download.pytorch.org/whl/cpu
+    pip install --no-cache-dir 'torch>=2.6.0' --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir torch-geometric
 
 # Copy application code
 COPY . .
