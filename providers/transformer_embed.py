@@ -98,8 +98,8 @@ class TransformerEmbedProvider(DescriptorProvider):
             return self._tokenizer, self._model
         
         try:
-            self._tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self._model = AutoModel.from_pretrained(model_name)
+            self._tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+            self._model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
             self._model.eval()
             
             # Move to device
@@ -315,3 +315,96 @@ class TransformerEmbedProvider(DescriptorProvider):
             success_count=success_count,
             error_count=error_count
         )
+
+
+class ChemBERTaZincProvider(TransformerEmbedProvider):
+    """ChemBERTa-zinc embedding provider"""
+    
+    MODEL_ID = "seyonec/ChemBERTa-zinc-base-v1"
+    
+    @property
+    def name(self) -> str:
+        return "chemberta_zinc"
+    
+    @property
+    def display_name(self) -> str:
+        return "ChemBERTa-zinc"
+    
+    def params_schema(self) -> list[ParamSpec]:
+        # Remove model_name from params since it's fixed
+        return [p for p in super().params_schema() if p.name != "model_name"]
+    
+    def featurize(self, records: list, params: dict) -> FeaturizeResult:
+        params = dict(params)
+        params["model_name"] = self.MODEL_ID
+        return super().featurize(records, params)
+
+
+class ChemBERTaPubchemProvider(TransformerEmbedProvider):
+    """ChemBERTa-pubchem embedding provider"""
+    
+    MODEL_ID = "seyonec/PubChem10M_SMILES_BPE_450k"
+    
+    @property
+    def name(self) -> str:
+        return "chemberta_pubchem"
+    
+    @property
+    def display_name(self) -> str:
+        return "ChemBERTa-pubchem"
+    
+    def params_schema(self) -> list[ParamSpec]:
+        return [p for p in super().params_schema() if p.name != "model_name"]
+    
+    def featurize(self, records: list, params: dict) -> FeaturizeResult:
+        params = dict(params)
+        params["model_name"] = self.MODEL_ID
+        return super().featurize(records, params)
+
+
+class MoLFormerProvider(TransformerEmbedProvider):
+    """MoLFormer embedding provider"""
+    
+    MODEL_ID = "ibm/MoLFormer-XL-both-10pct"
+    
+    @property
+    def name(self) -> str:
+        return "molformer"
+    
+    @property
+    def display_name(self) -> str:
+        return "MoLFormer"
+    
+    def params_schema(self) -> list[ParamSpec]:
+        return [p for p in super().params_schema() if p.name != "model_name"]
+    
+    def featurize(self, records: list, params: dict) -> FeaturizeResult:
+        params = dict(params)
+        params["model_name"] = self.MODEL_ID
+        return super().featurize(records, params)
+
+
+class PolyNCProvider(TransformerEmbedProvider):
+    """PolyNC embedding provider (polymer-specific)"""
+    
+    MODEL_ID = "hkqiu/PolyNC"
+    
+    @property
+    def name(self) -> str:
+        return "polync"
+    
+    @property
+    def display_name(self) -> str:
+        return "PolyNC"
+    
+    @property
+    def supports_polymer_smiles(self) -> bool:
+        return True  # PolyNC is specifically designed for polymers
+    
+    def params_schema(self) -> list[ParamSpec]:
+        return [p for p in super().params_schema() if p.name != "model_name"]
+    
+    def featurize(self, records: list, params: dict) -> FeaturizeResult:
+        params = dict(params)
+        params["model_name"] = self.MODEL_ID
+        return super().featurize(records, params)

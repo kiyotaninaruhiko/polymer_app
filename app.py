@@ -289,98 +289,154 @@ def render_model_page():
         st.error("No descriptor providers available!")
         return
     
-    # Model selection
+    # Group providers by kind
+    numeric_providers = [p for p in providers if p.kind == "numeric"]
+    fingerprint_providers = [p for p in providers if p.kind == "fingerprint"]
+    embedding_providers = [p for p in providers if p.kind == "embedding"]
+    
+    # Model selection with categories
     st.subheader("🧪 Select Models")
     
     selected_providers = []
     provider_params = {}
     
-    for provider in providers:
-        with st.expander(f"{'📈' if provider.kind == 'numeric' else '🔢' if provider.kind == 'fingerprint' else '🤖'} {provider.display_name}", expanded=False):
-            
-            # Enable checkbox
-            enabled = st.checkbox(
-                f"Enable {provider.name}",
-                value=True if provider.name == "rdkit_2d" else False,
-                key=f"enable_{provider.name}"
-            )
-            
-            if enabled:
-                selected_providers.append(provider)
-                
-                # Show provider info
-                col1, col2 = st.columns([2, 1])
-                col1.caption(f"Type: {provider.kind} | Version: {provider.version}")
-                col2.caption(f"Polymer SMILES: {'✅' if provider.supports_polymer_smiles else '❌'}")
-                
-                # Parameter UI
-                params = {}
-                for spec in provider.params_schema():
-                    if spec.type == "int":
-                        params[spec.name] = st.number_input(
-                            spec.name,
-                            value=spec.default,
-                            min_value=int(spec.min_value) if spec.min_value else None,
-                            max_value=int(spec.max_value) if spec.max_value else None,
-                            help=spec.description,
-                            key=f"{provider.name}_{spec.name}"
-                        )
-                    elif spec.type == "float":
-                        params[spec.name] = st.number_input(
-                            spec.name,
-                            value=float(spec.default),
-                            min_value=spec.min_value,
-                            max_value=spec.max_value,
-                            help=spec.description,
-                            key=f"{provider.name}_{spec.name}"
-                        )
-                    elif spec.type == "bool":
-                        params[spec.name] = st.checkbox(
-                            spec.name,
-                            value=spec.default,
-                            help=spec.description,
-                            key=f"{provider.name}_{spec.name}"
-                        )
-                    elif spec.type == "select":
-                        params[spec.name] = st.selectbox(
-                            spec.name,
-                            options=spec.options,
-                            index=spec.options.index(spec.default) if spec.default in spec.options else 0,
-                            help=spec.description,
-                            key=f"{provider.name}_{spec.name}"
-                        )
-                    elif spec.type == "str":
-                        # Special handling for model_name with presets
-                        if spec.name == "model_name":
-                            preset_names = ["Custom..."] + list(MODEL_PRESETS.keys())
-                            preset = st.selectbox(
-                                "Model Preset",
-                                options=preset_names,
-                                key=f"{provider.name}_preset"
-                            )
-                            if preset == "Custom...":
-                                params[spec.name] = st.text_input(
-                                    spec.name,
-                                    value=spec.default,
-                                    help=spec.description,
-                                    key=f"{provider.name}_{spec.name}"
-                                )
-                            else:
-                                params[spec.name] = MODEL_PRESETS[preset]["model_name"]
-                                st.caption(MODEL_PRESETS[preset].get("description", ""))
-                        else:
-                            params[spec.name] = st.text_input(
-                                spec.name,
-                                value=spec.default,
-                                help=spec.description,
-                                key=f"{provider.name}_{spec.name}"
-                            )
-                
-                provider_params[provider.name] = params
+    # Use tabs for categories
+    tab_numeric, tab_fingerprint, tab_embedding = st.tabs([
+        f"📈 Numeric ({len(numeric_providers)})",
+        f"🔢 Fingerprint ({len(fingerprint_providers)})",
+        f"🤖 Embedding ({len(embedding_providers)})"
+    ])
     
-    if not selected_providers:
+    def render_provider_selection(providers_list, tab_key):
+        """Render provider selection within a tab"""
+        selected = []
+        
+        if not providers_list:
+            st.info("No providers available in this category")
+            return selected
+        
+        # Create option mapping
+        options = {p.display_name: p for p in providers_list}
+        
+        # Multiselect for quick selection
+        selected_names = st.multiselect(
+            "Select models",
+            options=list(options.keys()),
+            default=[],
+            key=f"multiselect_{tab_key}",
+            help="Select one or more models to enable"
+        )
+        
+        selected = [options[name] for name in selected_names]
+        
+        # Quick info cards in columns
+        if providers_list:
+            cols = st.columns(min(len(providers_list), 3))
+            for i, provider in enumerate(providers_list):
+                with cols[i % 3]:
+                    is_selected = provider.display_name in selected_names
+                    polymer_badge = "🔗" if provider.supports_polymer_smiles else ""
+                    
+                    with st.container(border=True):
+                        st.markdown(f"**{provider.display_name}** {polymer_badge}")
+                        st.caption(f"{provider.kind} • v{provider.version}")
+                        if is_selected:
+                            st.success("✓ Selected", icon="✅")
+        
+        return selected
+    
+    def render_params_ui(provider, tab_key):
+        """Render parameter UI for a provider"""
+        params = {}
+        schema = provider.params_schema()
+        
+        if not schema:
+            st.caption("No configurable parameters")
+            return params
+        
+        for spec in schema:
+            if spec.type == "int":
+                params[spec.name] = st.number_input(
+                    spec.name,
+                    value=spec.default,
+                    min_value=int(spec.min_value) if spec.min_value else None,
+                    max_value=int(spec.max_value) if spec.max_value else None,
+                    help=spec.description,
+                    key=f"{tab_key}_{provider.name}_{spec.name}"
+                )
+            elif spec.type == "float":
+                params[spec.name] = st.number_input(
+                    spec.name,
+                    value=float(spec.default),
+                    min_value=spec.min_value,
+                    max_value=spec.max_value,
+                    help=spec.description,
+                    key=f"{tab_key}_{provider.name}_{spec.name}"
+                )
+            elif spec.type == "bool":
+                params[spec.name] = st.checkbox(
+                    spec.name,
+                    value=spec.default,
+                    help=spec.description,
+                    key=f"{tab_key}_{provider.name}_{spec.name}"
+                )
+            elif spec.type == "select":
+                params[spec.name] = st.selectbox(
+                    spec.name,
+                    options=spec.options,
+                    index=spec.options.index(spec.default) if spec.default in spec.options else 0,
+                    help=spec.description,
+                    key=f"{tab_key}_{provider.name}_{spec.name}"
+                )
+            elif spec.type == "str":
+                params[spec.name] = st.text_input(
+                    spec.name,
+                    value=spec.default,
+                    help=spec.description,
+                    key=f"{tab_key}_{provider.name}_{spec.name}"
+                )
+        
+        return params
+    
+    with tab_numeric:
+        selected_numeric = render_provider_selection(numeric_providers, "numeric")
+        selected_providers.extend(selected_numeric)
+        
+        if selected_numeric:
+            st.divider()
+            st.markdown("**⚙️ Parameters**")
+            for provider in selected_numeric:
+                with st.expander(f"{provider.display_name} settings", expanded=True):
+                    provider_params[provider.name] = render_params_ui(provider, "numeric")
+    
+    with tab_fingerprint:
+        selected_fp = render_provider_selection(fingerprint_providers, "fingerprint")
+        selected_providers.extend(selected_fp)
+        
+        if selected_fp:
+            st.divider()
+            st.markdown("**⚙️ Parameters**")
+            for provider in selected_fp:
+                with st.expander(f"{provider.display_name} settings", expanded=True):
+                    provider_params[provider.name] = render_params_ui(provider, "fingerprint")
+    
+    with tab_embedding:
+        selected_emb = render_provider_selection(embedding_providers, "embedding")
+        selected_providers.extend(selected_emb)
+        
+        if selected_emb:
+            st.divider()
+            st.markdown("**⚙️ Parameters**")
+            for provider in selected_emb:
+                with st.expander(f"{provider.display_name} settings", expanded=True):
+                    provider_params[provider.name] = render_params_ui(provider, "embedding")
+    
+    # Summary of selection
+    st.divider()
+    if selected_providers:
+        st.success(f"✅ {len(selected_providers)} model(s) selected: {', '.join([p.display_name for p in selected_providers])}")
+    else:
         st.warning("Please select at least one model")
-        return
     
     # Execution settings
     st.subheader("⚙️ Execution Settings")

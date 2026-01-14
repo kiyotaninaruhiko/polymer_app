@@ -48,12 +48,18 @@ def register_all_providers() -> None:
     # Import providers here to avoid circular imports
     from .rdkit2d import RDKit2DProvider
     from .morgan import MorganFingerprintProvider
-    from .transformer_embed import TransformerEmbedProvider
+    from .transformer_embed import (
+        ChemBERTaZincProvider,
+        ChemBERTaPubchemProvider,
+        MoLFormerProvider,
+        PolyNCProvider
+    )
     from .gnn_embed import GNNEmbedProvider
     from .maccs import MACCSKeysProvider
     from .atompair import AtomPairFPProvider, TopologicalTorsionFPProvider
     from .polymer_fp import PolymerFingerprintProvider
     from .unimol import UniMolProvider
+    from .molclr import MolCLRGINProvider, MolCLRGCNProvider
     
     # Register instances
     ProviderRegistry.register(RDKit2DProvider())
@@ -62,7 +68,17 @@ def register_all_providers() -> None:
     ProviderRegistry.register(AtomPairFPProvider())
     ProviderRegistry.register(TopologicalTorsionFPProvider())
     ProviderRegistry.register(PolymerFingerprintProvider())
-    ProviderRegistry.register(TransformerEmbedProvider())
+    
+    # Individual transformer embedding providers
+    ProviderRegistry.register(ChemBERTaZincProvider())
+    ProviderRegistry.register(ChemBERTaPubchemProvider())
+    ProviderRegistry.register(MoLFormerProvider())
+    ProviderRegistry.register(PolyNCProvider())
+    
+    # GNN embedding providers
     ProviderRegistry.register(GNNEmbedProvider())
+    ProviderRegistry.register(MolCLRGINProvider())
+    ProviderRegistry.register(MolCLRGCNProvider())
+    
     ProviderRegistry.register(UniMolProvider())
 

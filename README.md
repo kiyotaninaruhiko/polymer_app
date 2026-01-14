@@ -4,7 +4,7 @@
 
 ## 機能
 
-- **複数モデル対応**: RDKit 2D記述子、Morgan Fingerprint、Transformer Embedding
+- **複数モデル対応**: RDKit 2D記述子、Morgan Fingerprint、Transformer Embedding、GNN等
 - **ポリマーSMILES対応**: ワイルドカード（`*`）を含むポリマー表記に対応
 - **共重合体入力**: モノマーSMILES＋モル組成比で入力可能
 - **複数エクスポート形式**: CSV / Parquet / JSON
@@ -71,73 +71,35 @@ docker compose down
 - ファイルアップロードも可能
 
 ### 2. Select Models
-- 使用するモデルを選択
-  - **RDKit 2D Descriptors**: 分子量、TPSA、LogP等
-  - **Morgan Fingerprint**: ECFP/Morgan指紋（configurable radius/bits）
-  - **Transformer Embedding**: ChemBERTa、MoLFormer、PolyNC等
+- カテゴリタブ（Numeric / Fingerprint / Embedding）からモデルを選択
+- 複数モデルを同時選択可能
 
 ### 3. View Results
 - 結果をテーブルで確認
 - CSV/Parquet/JSONでダウンロード
 
-## 対応モデル一覧（全10種類）
+## 対応モデル一覧（全14種類）
 
-### モデル比較表
+> 📖 各モデルの詳細は [MODELS.md](MODELS.md) を参照してください。
 
-| モデル | 出力次元 | 解釈性 | 計算速度 | 事前学習 | ポリマー対応 | 推奨用途 |
-|--------|:-------:|:------:|:--------:|:--------:|:----------:|----------|
-| RDKit 2D | 16-200 | ◎ 高い | ◎ 最速 | 不要 | ❌ | 物性予測、QSAR |
-| Morgan FP | 512-4096 | ○ 中程度 | ◎ 高速 | 不要 | ❌ | 類似性検索、分類 |
-| MACCS Keys | 166 | ◎ 高い | ◎ 最速 | 不要 | ❌ | 構造アラート、フィルタリング |
-| AtomPair FP | 512-4096 | ○ 中程度 | ◎ 高速 | 不要 | ❌ | 類似性検索 |
-| TopologicalTorsion FP | 512-4096 | ○ 中程度 | ◎ 高速 | 不要 | ❌ | 構造比較 |
-| Polymer FP | ~290 | ○ 中程度 | ◎ 高速 | 不要 | ✅ | ポリマー物性予測 |
-| Transformer | 256-768 | △ 低い | △ 遅い | 必要 | ✅ | 転移学習、高精度予測 |
-| GNN (GIN) | 64-512 | △ 低い | ○ 中程度 | 不要* | ❌ | グラフベース学習 |
-| Uni-Mol | 512 | △ 低い | △ 遅い | 必要 | ❌ | 3D構造考慮予測 |
+| カテゴリ | モデル | Provider名 |
+|----------|--------|-----------|
+| **Numeric** | RDKit 2D | `rdkit_2d` |
+| **Fingerprint** | Morgan FP | `morgan_fp` |
+| | MACCS Keys | `maccs_keys` |
+| | AtomPair FP | `atompair_fp` |
+| | Torsion FP | `torsion_fp` |
+| | Polymer FP | `polymer_fp` 🔗 |
+| **Embedding** | ChemBERTa-zinc | `chemberta_zinc` 🔗 |
+| | ChemBERTa-pubchem | `chemberta_pubchem` 🔗 |
+| | MoLFormer | `molformer` 🔗 |
+| | PolyNC | `polync` 🔗 |
+| | GNN (GIN) | `gnn_embed` |
+| | MolCLR-GIN | `molclr_gin` |
+| | MolCLR-GCN | `molclr_gcn` |
+| | Uni-Mol | `unimol` |
 
-> *GNNは現在ランダム初期化。事前学習済み重みを使用する場合は別途ロード
-
-### 用途別おすすめモデル
-
-| 用途 | 推奨モデル | 理由 |
-|------|-----------|------|
-| **物性予測（低分子）** | RDKit 2D + Morgan FP | 解釈性が高く、実績豊富 |
-| **物性予測（ポリマー）** | Polymer FP + Transformer(PolyNC) | ポリマー構造に対応 |
-| **類似性検索** | Morgan FP, AtomPair FP | ビットベクトルで高速計算 |
-| **構造アラート** | MACCS Keys | 既知の毒性構造を検出 |
-| **転移学習** | Transformer Embedding | 豊富な事前学習済みモデル |
-| **3D構造考慮** | Uni-Mol | 立体構造を反映 |
-| **グラフ機械学習** | GNN (GIN) | GNN系モデルと組み合わせ |
-
-### 数値記述子（Numeric Descriptors）
-| モデル | Provider名 | 説明 | ポリマー対応 |
-|--------|-----------|------|:----------:|
-| RDKit 2D Descriptors | `rdkit2d` | 分子量、TPSA、LogP等 16〜200種類 | ❌ |
-
-### フィンガープリント（Fingerprints）
-| モデル | Provider名 | 説明 | ポリマー対応 |
-|--------|-----------|------|:----------:|
-| Morgan Fingerprint | `morgan_fp` | ECFP/Morgan指紋（radius, nBits設定可） | ❌ |
-| MACCS Keys | `maccs_keys` | 166-bit 構造キー | ❌ |
-| Atom Pair FP | `atompair_fp` | 原子ペア指紋 | ❌ |
-| Topological Torsion FP | `torsion_fp` | トポロジー捻れ指紋 | ❌ |
-| Polymer FP (PFP) | `polymer_fp` | ポリマー専用指紋（モノマー記述子 + Morgan） | ✅ |
-
-### エンベディング（Embeddings）
-| モデル | Provider名 | 説明 | ポリマー対応 |
-|--------|-----------|------|:----------:|
-| Transformer Embedding | `transformer_embed` | ChemBERTa, MoLFormer, PolyNC等 | ✅ |
-| GNN Embedding (GIN) | `gnn_embed` | Graph Isomorphism Network | ❌ |
-| Uni-Mol | `unimol` | 3D構造ベースエンベディング | ❌ |
-
-### Transformer プリセット
-| モデル名 | HuggingFace ID | 特徴 |
-|---------|---------------|------|
-| ChemBERTa-zinc | `seyonec/ChemBERTa-zinc-base-v1` | 一般的な低分子向け |
-| ChemBERTa-pubchem | `seyonec/PubChem10M_SMILES_BPE_450k` | 大規模データセット学習 |
-| MoLFormer | `ibm/MoLFormer-XL-both-10pct` | IBM開発、高精度 |
-| PolyNC | `hkqiu/PolyNC` | ポリマー専用、要PyTorch 2.6+ |
+🔗 = ポリマーSMILES対応
 
 ## プロジェクト構成
 
@@ -151,9 +113,16 @@ polymer_app/
 │   └── cache.py        # キャッシュ機能
 ├── providers/
 │   ├── base.py         # Provider抽象クラス
+│   ├── registry.py     # プロバイダー登録
 │   ├── rdkit2d.py      # RDKit 2D記述子
 │   ├── morgan.py       # Morgan Fingerprint
-│   └── transformer_embed.py  # Transformer埋め込み
+│   ├── maccs.py        # MACCS Keys
+│   ├── atompair.py     # AtomPair/TopologicalTorsion FP
+│   ├── polymer_fp.py   # Polymer Fingerprint
+│   ├── transformer_embed.py  # Transformer埋め込み
+│   ├── gnn_embed.py    # GNN埋め込み
+│   ├── molclr.py       # MolCLR事前学習済みGNN
+│   └── unimol.py       # Uni-Mol 3D埋め込み
 ├── export_io/
 │   └── export.py       # CSV/Parquet/JSON出力
 └── tests/              # ユニットテスト
