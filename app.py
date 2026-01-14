@@ -7,13 +7,12 @@ Supports RDKit 2D descriptors, Morgan fingerprints, and Transformer embeddings.
 import streamlit as st
 import pandas as pd
 import io
-from datetime import datetime
 
-from config import APP_NAME, APP_VERSION, MODEL_PRESETS
+from config import APP_NAME, APP_VERSION
 from core.parsing import parse_smiles_input, ParseStatus
 from core.cache import get_cache
 from providers.registry import ProviderRegistry, register_all_providers
-from export_io.export import export_csv, export_parquet, export_json, get_export_filename
+from export_io.export import get_export_filename
 
 
 # Page configuration
@@ -52,7 +51,8 @@ def render_sidebar():
         pages = {
             "input": "1️⃣ Input SMILES",
             "models": "2️⃣ Select Models",
-            "results": "3️⃣ View Results"
+            "results": "3️⃣ View Results",
+            "atom_viz": "🔬 Atom Attribution"
         }
         
         for page_key, page_name in pages.items():
@@ -632,8 +632,130 @@ def render_results_page():
                 st.json(result.run_meta)
 
 
+def render_atom_viz_page():
+    """Render atom attribution visualization page"""
+    st.header("🔬 Atom Attribution Visualization")
+    
+    st.markdown("""
+    Visualize which atoms contribute most to molecular fingerprints.
+    Atoms are colored by their importance (red = high, blue = low).
+    """)
+    
+    # Import visualization modules
+    try:
+        from core.atom_attribution import get_atom_contributions
+        from core.mol_visualizer import generate_attribution_image, image_to_base64
+        VIZ_AVAILABLE = True
+    except ImportError as e:
+        st.error(f"Visualization modules not available: {e}")
+        VIZ_AVAILABLE = False
+        return
+    
+    # Input
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        smiles_input = st.text_input(
+            "SMILES",
+            value="c1ccccc1O",
+            placeholder="Enter a SMILES string",
+            help="Enter a valid SMILES to visualize atom contributions"
+        )
+    
+    with col2:
+        method = st.selectbox(
+            "Method",
+            options=["morgan", "atompair"],
+            index=0,
+            help="morgan: Morgan fingerprint bit contributions\natompair: Atom pair fingerprint"
+        )
+    
+    # Method-specific options
+    if method == "morgan":
+        col1, col2 = st.columns(2)
+        with col1:
+            radius = st.slider("Radius", 1, 4, 2)
+        with col2:
+            n_bits = st.selectbox("Bits", [512, 1024, 2048, 4096], index=2)
+    else:
+        radius = 2
+        n_bits = 2048
+    
+    # Colormap
+    colormap = st.selectbox(
+        "Color scheme",
+        options=["coolwarm", "RdYlGn", "viridis", "plasma"],
+        index=0
+    )
+    
+    # Generate button
+    if st.button("🎨 Generate Visualization", type="primary", use_container_width=True):
+        if not smiles_input.strip():
+            st.error("Please enter a SMILES string")
+            return
+        
+        try:
+            with st.spinner("Calculating atom contributions..."):
+                # Get contributions
+                if method == "morgan":
+                    result = get_atom_contributions(
+                        smiles_input,
+                        method="morgan",
+                        radius=radius,
+                        n_bits=n_bits
+                    )
+                else:
+                    result = get_atom_contributions(
+                        smiles_input,
+                        method="atompair",
+                        n_bits=n_bits
+                    )
+                
+                # Generate image
+                image_bytes = generate_attribution_image(
+                    smiles_input,
+                    result["atom_contributions"],
+                    width=500,
+                    height=400,
+                    colormap=colormap
+                )
+                
+                # Display
+                st.subheader("Atom Contributions")
+                
+                col1, col2 = st.columns([2, 1])
+                
+                with col1:
+                    st.image(image_bytes, caption=f"SMILES: {smiles_input}")
+                
+                with col2:
+                    st.markdown("**Contribution Scores**")
+                    atoms_df = pd.DataFrame({
+                        "Atom": list(range(result["n_atoms"])),
+                        "Score": [round(s, 3) for s in result["atom_contributions"]]
+                    })
+                    st.dataframe(atoms_df, use_container_width=True, hide_index=True)
+                
+                # Colorbar legend
+                st.markdown("""
+                <div style="display: flex; align-items: center; margin-top: 10px;">
+                    <span style="margin-right: 10px;">Low</span>
+                    <div style="width: 200px; height: 20px; background: linear-gradient(to right, 
+                        rgb(59, 76, 192), rgb(255, 255, 255), rgb(180, 4, 38));
+                        border-radius: 3px;"></div>
+                    <span style="margin-left: 10px;">High</span>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.success(f"✅ Visualized {result['n_atoms']} atoms")
+                
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+
+
 def main():
     """Main application entry point"""
+    init_providers()
     render_sidebar()
     
     if st.session_state.page == "input":
@@ -642,6 +764,8 @@ def main():
         render_model_page()
     elif st.session_state.page == "results":
         render_results_page()
+    elif st.session_state.page == "atom_viz":
+        render_atom_viz_page()
 
 
 if __name__ == "__main__":
